@@ -20,11 +20,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17 (Temurin)
+      - name: Set up JDK (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: |
+            17
+            21
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -33,22 +35,30 @@ jobs:
 
       - name: Build Debug APK & Package WarpDrop-v1.0.apk
         run: |
+          if [ ! -f .env ] && [ -f .env.example ]; then
+            cp .env.example .env
+          fi
           if [ ! -f debug.keystore ] && [ -f debug.keystore.base64 ]; then
             base64 -d debug.keystore.base64 > debug.keystore
           fi
           gradle assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk WarpDrop-v1.0.apk
+          cp app/build/outputs/apk/debug/app-debug.apk WarpDrop.apk
 
       - name: Upload WarpDrop APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WarpDrop-APK
-          path: WarpDrop-v1.0.apk
+          path: |
+            WarpDrop-v1.0.apk
+            WarpDrop.apk
 
       - name: Publish Direct-Download GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v1.0.${{ github.run_number }}"
           name: "WarpDrop v1.0.${{ github.run_number }} APK"
-          files: WarpDrop-v1.0.apk
+          files: |
+            WarpDrop-v1.0.apk
+            WarpDrop.apk
           generate_release_notes: true
